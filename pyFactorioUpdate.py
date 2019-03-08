@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 '''
 pyFactorioUpdate was created to eliminate the toil involved in updating a headless Factorio server
+When run the script will compare the last-modified header of the Factorio archive available for
+download against the creation time of the most recently downloaded archive, if the web version
+is newer it will be fetched and installed.
 '''
 
 import argparse as pr
@@ -9,6 +12,7 @@ import os
 import shutil as sh
 import tarfile as tf
 import requests as rq
+
 
 def download_file(src, dest):
     '''
@@ -22,13 +26,18 @@ def download_file(src, dest):
     fd.close()
     print("downloaded {} to {}".format(src, dest))
 
+
 parser = pr.ArgumentParser()
-parser.add_argument('-e', '--experimental',
-                    help="Use Factorio's experimental track rather than stable",
-                    action='store_true')
-parser.add_argument('-f', '--force',
-                    help='Force download and extraction even if Factorio seems up to date',
-                    action='store_true')
+parser.add_argument(
+    '-e',
+    '--experimental',
+    help="Use Factorio's experimental track rather than stable",
+    action='store_true')
+parser.add_argument(
+    '-f',
+    '--force',
+    help='Force download and extraction even if Factorio seems up to date',
+    action='store_true')
 ARGS = parser.parse_args()
 
 current_archive = '/opt/factorio-updater/current'
@@ -52,7 +61,6 @@ if os.path.exists(tmp_file):
     print('cleaning up old temp file')
     os.remove(tmp_file)
 
-
 if ARGS.experimental:
     url = 'https://www.factorio.com/get-download/latest/headless/linux64'
 else:
@@ -61,8 +69,8 @@ else:
 head = rq.head(url, allow_redirects=True)
 
 server_datestring = head.headers['Last-Modified']
-server_datetime = dt.datetime.strptime(server_datestring, '%a, %d %b %Y %H:%M:%S %Z')
-
+server_datetime = dt.datetime.strptime(server_datestring,
+                                       '%a, %d %b %Y %H:%M:%S %Z')
 
 if server_datetime > current_archive_datetime or ARGS.force:
     print('new version of Factorio detected, beginning download')
