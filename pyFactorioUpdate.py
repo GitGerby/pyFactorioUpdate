@@ -15,6 +15,7 @@ current_archive_datetime = dt.datetime.fromtimestamp(current_archive_ts)
 tmp_dir = '/tmp/factorio-updater'
 tmp_file = '/tmp/factorio-updater/archive.tmp'
 if not os.path.exists(tmp_dir):
+  print('creating /tmp/factorio-updater/')
   os.mkdir(tmp_dir,0o744)
 
 if args.experimental:
