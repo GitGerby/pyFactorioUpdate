@@ -14,7 +14,7 @@ def download_file(src, dest):
     '''
     downloads a file
     '''
-    
+
     r = rq.get(src, stream=True)
     with open(dest, 'wb') as fd:
         for chunk in r.iter_content(chunk_size=128):
@@ -23,8 +23,12 @@ def download_file(src, dest):
     print("downloaded {} to {}".format(src, dest))
 
 parser = pr.ArgumentParser()
-parser.add_argument('-e', '--experimental', help="Use Factorio's experimental track rather than stable", action='store_true')
-parser.add_argument('-f', '--force', help='Force download and extraction even if Factorio seems up to date', action='store_true')
+parser.add_argument('-e', '--experimental',
+                    help="Use Factorio's experimental track rather than stable",
+                    action='store_true')
+parser.add_argument('-f', '--force',
+                    help='Force download and extraction even if Factorio seems up to date',
+                    action='store_true')
 ARGS = parser.parse_args()
 
 current_archive = '/opt/factorio-updater/current'
