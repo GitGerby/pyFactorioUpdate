@@ -30,6 +30,7 @@ server_datetime = dt.datetime.strptime(server_datestring, '%a, %d %b %Y %H:%M:%S
 
 
 if server_datetime > current_archive_datetime:
+  print('new version of Factorio detected, beginning download')
   r = rq.get(url,stream=True)
   with open(tmp_file, 'wb') as fd:
     for chunk in r.iter_content(chunk_size=128):
