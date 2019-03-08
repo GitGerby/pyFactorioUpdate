@@ -47,7 +47,7 @@ if server_datetime > current_archive_datetime:
   with open(tmp_file, 'wb') as fd:
     for chunk in r.iter_content(chunk_size=128):
       fd.write(chunk)
-  print ('download new version to {}'.format(tmp_file))
+  print ('downloaded new version to {}'.format(tmp_file))
 else:
   print('Factorio is already up to date')
 
