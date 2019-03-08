@@ -4,6 +4,7 @@ import datetime as dt
 import os as os
 import argparse as pr
 import tarfile as tf
+import shutil as sh
 
 def download_file(url,dest_dir,dest_file):
   destination = dest_dir + dest_file
@@ -12,7 +13,7 @@ def download_file(url,dest_dir,dest_file):
     for chunk in r.iter_content(chunk_size=128):
       fd.write(chunk)
   fd.close()
-  print "downloaded {url} to {destination}".format(url, destination)
+  print("downloaded {url} to {destination}".format(url, destination))
 
 parser = pr.ArgumentParser()
 parser.add_argument('-e', '--experimental', help="Use Factorio's experimental track rather than stable", action='store_true')
@@ -57,4 +58,4 @@ if server_datetime > current_archive_datetime:
 else:
   print('Factorio is already up to date')
 
-os.remove(tmp_dir)
+sh.rmtree(tmp_dir)
