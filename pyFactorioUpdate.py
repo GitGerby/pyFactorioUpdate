@@ -9,7 +9,8 @@ parser.add_argument('-e','--experimental',help="Use Factorio's experimental trac
 args = parser.parse_args()
 
 current_archive = '/opt/factorio-updater/current'
-current_archive_date = os.path.getctime(current_archive)
+current_archive_ts = os.path.getctime(current_archive)
+current_archive_datetime = dt.datetime.fromtimestamp(current_archive_ts)
 
 tmp_file = '/tmp/factorio-updater/archive.tmp'
 
@@ -24,7 +25,7 @@ server_datestring = head.headers['Last-Modified']
 server_datetime = dt.datetime.strptime(server_datestring, '%a, %d %b %Y %H:%M:%S %Z')
 
 
-if server_datetime > current_archive_date:
+if server_datetime > current_archive_datetime:
   r = rq.get(url,stream=True)
   with open(tmp_file, 'wb') as fd:
     for chunk in r.iter_content(chunk_size=128):
