@@ -3,6 +3,7 @@ import requests as rq
 import datetime as dt
 import os as os
 import argparse as pr
+import tarfile as tf
 
 parser = pr.ArgumentParser()
 parser.add_argument('-e', '--experimental', help="Use Factorio's experimental track rather than stable", action='store_true')
@@ -14,10 +15,15 @@ current_archive_datetime = dt.datetime.fromtimestamp(current_archive_ts)
 
 tmp_dir = '/tmp/factorio-updater'
 tmp_file = '/tmp/factorio-updater/archive.tmp'
+tmp_staging = '/tmp/factorio-updater/staging'
 
 if not os.path.exists(tmp_dir):
-  print('creating /tmp/factorio-updater/')
-  os.mkdir(tmp_dir,0o744)
+  print('creating temporary directory {}'.format(tmp_dir))
+  os.mkdir(tmp_dir,0o755)
+
+if not os.path.exists(tmp_staging):
+  print('creating staging folder {}'.format(tmp_staging))
+
 if os.path.exists(tmp_file):
   print('cleaning up old temp file')
   os.remove(tmp_file)
