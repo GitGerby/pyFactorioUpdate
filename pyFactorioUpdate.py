@@ -14,9 +14,11 @@ def download_file(url, dest_dir, dest_file):
       fd.write(chunk)
   fd.close()
   print("downloaded {url} to {destination}".format(url, destination))
+  return destination
 
 parser = pr.ArgumentParser()
 parser.add_argument('-e', '--experimental', help="Use Factorio's experimental track rather than stable", action='store_true')
+parser.add_argument('-f', '--force', help='Force download and extraction even if Factorio seems up to date', action='store_true')
 args = parser.parse_args()
 
 current_archive = '/opt/factorio-updater/current'
@@ -51,11 +53,13 @@ server_datestring = head.headers['Last-Modified']
 server_datetime = dt.datetime.strptime(server_datestring, '%a, %d %b %Y %H:%M:%S %Z')
 
 
-if server_datetime > current_archive_datetime:
+if server_datetime > current_archive_datetime or args.force:
   print('new version of Factorio detected, beginning download')
-  download_file(url, tmp_dir, tmp_file)
+  tar_location = download_file(url, tmp_dir, tmp_file)
   print ('downloaded new version to {}'.format(tmp_file))
+  archive = tf.open(tar_location)
+  archive.extractall(tmp_staging)
 else:
   print('Factorio is already up to date')
 
-sh.rmtree(tmp_dir)
+#sh.rmtree(tmp_dir)
