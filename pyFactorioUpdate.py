@@ -38,16 +38,22 @@ parser.add_argument(
     '--force',
     help='Force download and extraction even if Factorio seems up to date',
     action='store_true')
+parser.add_argument(
+    '--tmp_dir',
+    default='/tmp/factorio-updater/',
+    help=
+    'Temporary directory to use during processing, defaults to /tmp/factorio-updater/',
+)
 ARGS = parser.parse_args()
 
 current_archive = '/opt/factorio-updater/current'
 current_archive_ts = os.path.getctime(current_archive)
 current_archive_datetime = dt.datetime.fromtimestamp(current_archive_ts)
 
-tmp_dir = '/tmp/factorio-updater/'
+tmp_dir = ARGS.tmp_dir
 tmp_filename = 'archive.tmp'
 tmp_file = tmp_dir + tmp_filename
-tmp_staging = '/tmp/factorio-updater/staging/'
+tmp_staging = tmp_dir + '/staging/'
 
 if not os.path.exists(tmp_dir):
     print('creating temporary directory {}'.format(tmp_dir))
