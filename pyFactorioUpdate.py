@@ -1,25 +1,32 @@
 #!/usr/bin/python3
-import requests as rq
-import datetime as dt
-import os as os
-import argparse as pr
-import tarfile as tf
-import shutil as sh
+'''
+pyFactorioUpdate was created to eliminate the toil involved in updating a headless Factorio server
+'''
 
-def download_file(url, dest_dir, dest_file):
-  destination = dest_dir + dest_file
-  r = rq.get(url, stream=True)
-  with open(destination, 'wb') as fd:
-    for chunk in r.iter_content(chunk_size=128):
-      fd.write(chunk)
-  fd.close()
-  print("downloaded {} to {}".format(url, destination))
-  return destination
+import argparse as pr
+import datetime as dt
+import os
+import shutil as sh
+import tarfile as tf
+import requests as rq
+
+def download_file(src, dest_dir, dest_file):
+    '''
+    downloads a file
+    '''
+    destination = dest_dir + dest_file
+    r = rq.get(src, stream=True)
+    with open(destination, 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
+    fd.close()
+    print("downloaded {} to {}".format(src, destination))
+    return destination
 
 parser = pr.ArgumentParser()
 parser.add_argument('-e', '--experimental', help="Use Factorio's experimental track rather than stable", action='store_true')
 parser.add_argument('-f', '--force', help='Force download and extraction even if Factorio seems up to date', action='store_true')
-args = parser.parse_args()
+ARGS = parser.parse_args()
 
 current_archive = '/opt/factorio-updater/current'
 current_archive_ts = os.path.getctime(current_archive)
@@ -31,22 +38,22 @@ tmp_file = tmp_dir + tmp_filename
 tmp_staging = '/tmp/factorio-updater/staging/'
 
 if not os.path.exists(tmp_dir):
-  print('creating temporary directory {}'.format(tmp_dir))
-  os.mkdir(tmp_dir,0o755)
+    print('creating temporary directory {}'.format(tmp_dir))
+    os.mkdir(tmp_dir,0o755)
 
 if not os.path.exists(tmp_staging):
-  print('creating staging folder {}'.format(tmp_staging))
-  os.mkdir(tmp_staging,0o755)
+    print('creating staging folder {}'.format(tmp_staging))
+    os.mkdir(tmp_staging,0o755)
 
 if os.path.exists(tmp_file):
-  print('cleaning up old temp file')
-  os.remove(tmp_file)
+    print('cleaning up old temp file')
+    os.remove(tmp_file)
 
 
-if args.experimental:
-  url = 'https://www.factorio.com/get-download/latest/headless/linux64'
+if ARGS.experimental:
+    url = 'https://www.factorio.com/get-download/latest/headless/linux64'
 else:
-  url = 'https://www.factorio.com/get-download/stable/headless/linux64'
+    url = 'https://www.factorio.com/get-download/stable/headless/linux64'
 
 head = rq.head(url, allow_redirects=True)
 
@@ -54,13 +61,13 @@ server_datestring = head.headers['Last-Modified']
 server_datetime = dt.datetime.strptime(server_datestring, '%a, %d %b %Y %H:%M:%S %Z')
 
 
-if server_datetime > current_archive_datetime or args.force:
-  print('new version of Factorio detected, beginning download')
-  tar_location = download_file(url, tmp_dir, tmp_file)
-  print ('downloaded new version to {}'.format(tmp_file))
-  archive = tf.open(tar_location)
-  archive.extractall(tmp_staging)
+if server_datetime > current_archive_datetime or ARGS.force:
+    print('new version of Factorio detected, beginning download')
+    tar_location = download_file(url, tmp_dir, tmp_file)
+    print ('downloaded new version to {}'.format(tmp_file))
+    archive = tf.open(tar_location)
+    archive.extractall(tmp_staging)
 else:
-  print('Factorio is already up to date')
+    print('Factorio is already up to date')
 
-#sh.rmtree(tmp_dir)
+sh.rmtree(tmp_dir)
