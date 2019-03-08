@@ -13,7 +13,7 @@ def download_file(url, dest_dir, dest_file):
     for chunk in r.iter_content(chunk_size=128):
       fd.write(chunk)
   fd.close()
-  print("downloaded {url} to {destination}".format(url, destination))
+  print("downloaded {} to {}".format(url, destination))
   return destination
 
 parser = pr.ArgumentParser()
@@ -25,9 +25,10 @@ current_archive = '/opt/factorio-updater/current'
 current_archive_ts = os.path.getctime(current_archive)
 current_archive_datetime = dt.datetime.fromtimestamp(current_archive_ts)
 
-tmp_dir = '/tmp/factorio-updater'
-tmp_file = 'archive.tmp'
-tmp_staging = '/tmp/factorio-updater/staging'
+tmp_dir = '/tmp/factorio-updater/'
+tmp_filename = 'archive.tmp'
+tmp_file = tmp_dir + tmp_filename
+tmp_staging = '/tmp/factorio-updater/staging/'
 
 if not os.path.exists(tmp_dir):
   print('creating temporary directory {}'.format(tmp_dir))
