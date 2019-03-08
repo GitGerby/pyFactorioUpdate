@@ -10,18 +10,17 @@ import shutil as sh
 import tarfile as tf
 import requests as rq
 
-def download_file(src, dest_dir, dest_file):
+def download_file(src, dest):
     '''
     downloads a file
     '''
-    destination = dest_dir + dest_file
+    
     r = rq.get(src, stream=True)
-    with open(destination, 'wb') as fd:
+    with open(dest, 'wb') as fd:
         for chunk in r.iter_content(chunk_size=128):
             fd.write(chunk)
     fd.close()
-    print("downloaded {} to {}".format(src, destination))
-    return destination
+    print("downloaded {} to {}".format(src, dest))
 
 parser = pr.ArgumentParser()
 parser.add_argument('-e', '--experimental', help="Use Factorio's experimental track rather than stable", action='store_true')
@@ -63,9 +62,9 @@ server_datetime = dt.datetime.strptime(server_datestring, '%a, %d %b %Y %H:%M:%S
 
 if server_datetime > current_archive_datetime or ARGS.force:
     print('new version of Factorio detected, beginning download')
-    tar_location = download_file(url, tmp_dir, tmp_file)
+    download_file(url, tmp_file)
     print ('downloaded new version to {}'.format(tmp_file))
-    archive = tf.open(tar_location)
+    archive = tf.open(tmp_file)
     archive.extractall(tmp_staging)
 else:
     print('Factorio is already up to date')
