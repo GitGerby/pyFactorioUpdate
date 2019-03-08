@@ -14,9 +14,14 @@ current_archive_datetime = dt.datetime.fromtimestamp(current_archive_ts)
 
 tmp_dir = '/tmp/factorio-updater'
 tmp_file = '/tmp/factorio-updater/archive.tmp'
+
 if not os.path.exists(tmp_dir):
   print('creating /tmp/factorio-updater/')
   os.mkdir(tmp_dir,0o744)
+if os.path.exists(tmp_file):
+  print('cleaning up old temp file')
+  os.remove(tmp_file)
+
 
 if args.experimental:
   url = 'https://www.factorio.com/get-download/latest/headless/linux64'
@@ -35,5 +40,6 @@ if server_datetime > current_archive_datetime:
   with open(tmp_file, 'wb') as fd:
     for chunk in r.iter_content(chunk_size=128):
       fd.write(chunk)
+  print('download new version to ')
 else:
   print('Factorio is already up to date')
