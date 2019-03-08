@@ -5,14 +5,17 @@ import os as os
 import argparse as pr
 
 parser = pr.ArgumentParser()
-parser.add_argument('-e','--experimental',help="Use Factorio's experimental track rather than stable",action='store_true')
+parser.add_argument('-e', '--experimental', help="Use Factorio's experimental track rather than stable", action='store_true')
 args = parser.parse_args()
 
 current_archive = '/opt/factorio-updater/current'
 current_archive_ts = os.path.getctime(current_archive)
 current_archive_datetime = dt.datetime.fromtimestamp(current_archive_ts)
 
+tmp_dir = '/tmp/factorio-updater'
 tmp_file = '/tmp/factorio-updater/archive.tmp'
+if not os.path.exists(tmp_dir):
+  os.mkdir(tmp_dir,0o744)
 
 if args.experimental:
   url = 'https://www.factorio.com/get-download/latest/headless/linux64'
