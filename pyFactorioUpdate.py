@@ -6,12 +6,13 @@ import argparse as pr
 import tarfile as tf
 
 def download_file(url,dest_dir,dest_file):
+  destination = dest_dir + dest_file
   r = rq.get(url, stream=True)
-  with open(dest_dir + dest_file, 'wb') as fd:
+  with open(destination, 'wb') as fd:
     for chunk in r.iter_content(chunk_size=128):
       fd.write(chunk)
   fd.close()
-  print "downloaded {url} to {dest}".format(url,dest_dir + dest_file)
+  print "downloaded {url} to {destination}".format(url, destination)
 
 parser = pr.ArgumentParser()
 parser.add_argument('-e', '--experimental', help="Use Factorio's experimental track rather than stable", action='store_true')
