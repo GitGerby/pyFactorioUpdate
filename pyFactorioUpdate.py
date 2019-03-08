@@ -23,6 +23,7 @@ if not os.path.exists(tmp_dir):
 
 if not os.path.exists(tmp_staging):
   print('creating staging folder {}'.format(tmp_staging))
+  os.mkdir(tmp_staging,0o755)
 
 if os.path.exists(tmp_file):
   print('cleaning up old temp file')
@@ -49,3 +50,5 @@ if server_datetime > current_archive_datetime:
   print ('download new version to {}'.format(tmp_file))
 else:
   print('Factorio is already up to date')
+
+os.remove(tmp_dir)
