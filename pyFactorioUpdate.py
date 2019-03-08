@@ -6,7 +6,7 @@ import argparse as pr
 import tarfile as tf
 import shutil as sh
 
-def download_file(url,dest_dir,dest_file):
+def download_file(url, dest_dir, dest_file):
   destination = dest_dir + dest_file
   r = rq.get(url, stream=True)
   with open(destination, 'wb') as fd:
