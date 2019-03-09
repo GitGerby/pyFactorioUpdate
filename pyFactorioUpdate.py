@@ -100,6 +100,7 @@ if server_datetime > CURRENT_ARCHIVE_DATETIME or ARGS.force:
     retcode = sp.call('systemctl start factorio')
     if retcode != 0:
         raise RuntimeError
+    sh.move(tmp_file, CURRENT_ARCHIVE)
 else:
     print('Factorio is already up to date')
 
