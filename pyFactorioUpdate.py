@@ -90,18 +90,17 @@ if server_datetime > CURRENT_ARCHIVE_DATETIME or ARGS.force:
     print('downloaded new version to {}'.format(tmp_file))
     archive = tf.open(tmp_file)
     archive.extractall(TMP_STAGING)
+    print('Stopping Factorio')
+    retcode = sp.call('systemctl stop factorio')
+    if retcode != 0:
+        raise RuntimeError
+    retcode = sp.call('cp -R' + TMP_STAGING + '*' + ' ' + '/opt/')
+    if retcode != 0:
+        raise RuntimeError
+    retcode = sp.call('systemctl start factorio')
+    if retcode != 0:
+        raise RuntimeError
 else:
     print('Factorio is already up to date')
-
-print('Stopping Factorio')
-retcode = sp.call('systemctl stop factorio')
-if retcode != 0:
-    raise RuntimeError
-retcode = sp.call('cp -R' + TMP_STAGING + '*' + ' ' + '/opt/')
-if retcode != 0:
-    raise RuntimeError
-retcode = sp.call('systemctl start factorio')
-if retcode != 0:
-    raise RuntimeError
 
 sh.rmtree(TMP_STAGING)
