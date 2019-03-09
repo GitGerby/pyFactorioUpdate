@@ -91,13 +91,13 @@ if server_datetime > CURRENT_ARCHIVE_DATETIME or ARGS.force:
     archive = tf.open(tmp_file)
     archive.extractall(TMP_STAGING)
     print('Stopping Factorio')
-    retcode = sp.call('systemctl stop factorio')
+    retcode = sp.call('/bin/systemctl stop factorio')
     if retcode != 0:
         raise RuntimeError
-    retcode = sp.call('cp -R' + TMP_STAGING + '*' + ' ' + '/opt/')
+    retcode = sp.call('/bin/cp -R ' + TMP_STAGING + ' /opt/')
     if retcode != 0:
         raise RuntimeError
-    retcode = sp.call('systemctl start factorio')
+    retcode = sp.call('/bin/systemctl start factorio')
     if retcode != 0:
         raise RuntimeError
     sh.move(tmp_file, CURRENT_ARCHIVE)
