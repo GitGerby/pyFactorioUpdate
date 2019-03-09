@@ -29,6 +29,32 @@ def download_file(src, dest):
     print("downloaded {} to {}".format(src, dest))
 
 
+def extract_factorio(archive, dest):
+    '''
+    extracts the downloaded tar
+    '''
+    archive = tf.open(archive)
+    archive.extractall(dest)
+    return TMP_STAGING + '/factorio/'
+
+
+def get_latest_version_date(experimental):
+    '''
+    returns the datetime of the package available for download and the URL
+    to retrieve that package
+    '''
+    if experimental:
+        url = 'https://www.factorio.com/get-download/latest/headless/linux64'
+    else:
+        url = 'https://www.factorio.com/get-download/stable/headless/linux64'
+
+    head = rq.head(url, allow_redirects=True)
+
+    server_datestring = head.headers['Last-Modified']
+    return (dt.datetime.strptime(server_datestring,
+                                 '%a, %d %b %Y %H:%M:%S %Z'), url)
+
+
 PARSER = pr.ArgumentParser()
 PARSER.add_argument(
     '-e',
@@ -57,8 +83,7 @@ else:
     CURRENT_ARCHIVE_DATETIME = dt.datetime.fromtimestamp(0)
 
 TMP_DIR = ARGS.tmp_dir
-tmp_filename = 'archive.tmp'
-tmp_file = TMP_DIR + tmp_filename
+TMP_FILE = TMP_DIR + 'archive.tar'
 TMP_STAGING = TMP_DIR + '/staging/'
 
 if not os.path.exists(TMP_DIR):
@@ -69,50 +94,39 @@ if not os.path.exists(TMP_STAGING):
     print('creating staging folder {}'.format(TMP_STAGING))
     os.mkdir(TMP_STAGING, 0o755)
 
-if os.path.exists(tmp_file):
+if os.path.exists(TMP_FILE):
     print('cleaning up old temp file')
-    os.remove(tmp_file)
+    os.remove(TMP_FILE)
 
-if ARGS.experimental:
-    url = 'https://www.factorio.com/get-download/latest/headless/linux64'
-else:
-    url = 'https://www.factorio.com/get-download/stable/headless/linux64'
+SERVER_DATETIME, URL = get_latest_version_date(ARGS.experimental)
 
-head = rq.head(url, allow_redirects=True)
-
-server_datestring = head.headers['Last-Modified']
-server_datetime = dt.datetime.strptime(server_datestring,
-                                       '%a, %d %b %Y %H:%M:%S %Z')
-
-if server_datetime > CURRENT_ARCHIVE_DATETIME or ARGS.force:
+if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
     print('new version of Factorio detected, beginning download')
-    download_file(url, tmp_file)
-    print('downloaded new version to {}'.format(tmp_file))
+    download_file(URL, TMP_FILE)
+    print('downloaded new version to {}'.format(TMP_FILE))
 
-    archive = tf.open(tmp_file)
-    archive.extractall(TMP_STAGING)
-    new_factorio = TMP_STAGING + '/factorio/'
+    NEW_FACTORIO = extract_factorio(TMP_FILE, TMP_STAGING)
 
     print('Stopping Factorio')
-    retcode = sp.run(['systemctl', 'stop', 'factorio']).returncode
-    if retcode != 0:
+    return_code = sp.run(['systemctl', 'stop', 'factorio']).returncode
+    if return_code != 0:
         raise RuntimeError
     print('Stopped Factorio')
 
     print('Copying new files')
-    retcode = sp.run(['cp', '-R', new_factorio, '/opt/']).returncode
-    if retcode != 0:
+    return_code = sp.run(['cp', '-R', NEW_FACTORIO, '/opt/']).returncode
+    if return_code != 0:
         raise RuntimeError
     print('Copied new files')
 
     print('Starting Factorio')
-    retcode = sp.run(['systemctl', 'start', 'factorio']).returncode
-    if retcode != 0:
+    return_code = sp.run(['systemctl', 'start', 'factorio']).returncode
+    if return_code != 0:
         raise RuntimeError
     print('Started Factorio')
 
     print('Updating current archive')
-    sh.move(tmp_file, CURRENT_ARCHIVE)
+    sh.move(TMP_FILE, CURRENT_ARCHIVE)
 else:
     print('Factorio is already up to date')
 
