@@ -11,6 +11,7 @@ import datetime as dt
 import os
 import shutil as sh
 import tarfile as tf
+import subprocess as sp
 import requests as rq
 
 
@@ -19,49 +20,54 @@ def download_file(src, dest):
     downloads a file
     '''
 
-    r = rq.get(src, stream=True)
-    with open(dest, 'wb') as fd:
-        for chunk in r.iter_content(chunk_size=128):
-            fd.write(chunk)
-    fd.close()
+    download = rq.get(src, stream=True)
+    with open(dest, 'wb') as file_descriptor:
+        for chunk in download.iter_content(chunk_size=128):
+            file_descriptor.write(chunk)
+    file_descriptor.close()
+    download.close()
     print("downloaded {} to {}".format(src, dest))
 
 
-parser = pr.ArgumentParser()
-parser.add_argument(
+PARSER = pr.ArgumentParser()
+PARSER.add_argument(
     '-e',
     '--experimental',
     help="Use Factorio's experimental track rather than stable",
     action='store_true')
-parser.add_argument(
+PARSER.add_argument(
     '-f',
     '--force',
     help='Force download and extraction even if Factorio seems up to date',
     action='store_true')
-parser.add_argument(
+PARSER.add_argument(
     '--tmp_dir',
     default='/tmp/factorio-updater/',
     help=
     'Temporary directory to use during processing, defaults to /tmp/factorio-updater/',
 )
-ARGS = parser.parse_args()
+ARGS = PARSER.parse_args()
 
-current_archive = '/opt/factorio-updater/current'
-current_archive_ts = os.path.getctime(current_archive)
-current_archive_datetime = dt.datetime.fromtimestamp(current_archive_ts)
+CURRENT_ARCHIVE = '/opt/factorio-updater/current'
+if os.path.exists(CURRENT_ARCHIVE):
+    CURRENT_ARCHIVE_TS = os.path.getctime(CURRENT_ARCHIVE)
+    CURRENT_ARCHIVE_DATETIME = dt.datetime.fromtimestamp(CURRENT_ARCHIVE_TS)
+else:
+    print('Unable to determine timestamp of currently installed instance')
+    CURRENT_ARCHIVE_DATETIME = dt.datetime.fromtimestamp(0)
 
-tmp_dir = ARGS.tmp_dir
+TMP_DIR = ARGS.tmp_dir
 tmp_filename = 'archive.tmp'
-tmp_file = tmp_dir + tmp_filename
-tmp_staging = tmp_dir + '/staging/'
+tmp_file = TMP_DIR + tmp_filename
+TMP_STAGING = TMP_DIR + '/staging/'
 
-if not os.path.exists(tmp_dir):
-    print('creating temporary directory {}'.format(tmp_dir))
-    os.mkdir(tmp_dir, 0o755)
+if not os.path.exists(TMP_DIR):
+    print('creating temporary directory {}'.format(TMP_DIR))
+    os.mkdir(TMP_DIR, 0o755)
 
-if not os.path.exists(tmp_staging):
-    print('creating staging folder {}'.format(tmp_staging))
-    os.mkdir(tmp_staging, 0o755)
+if not os.path.exists(TMP_STAGING):
+    print('creating staging folder {}'.format(TMP_STAGING))
+    os.mkdir(TMP_STAGING, 0o755)
 
 if os.path.exists(tmp_file):
     print('cleaning up old temp file')
@@ -78,13 +84,24 @@ server_datestring = head.headers['Last-Modified']
 server_datetime = dt.datetime.strptime(server_datestring,
                                        '%a, %d %b %Y %H:%M:%S %Z')
 
-if server_datetime > current_archive_datetime or ARGS.force:
+if server_datetime > CURRENT_ARCHIVE_DATETIME or ARGS.force:
     print('new version of Factorio detected, beginning download')
     download_file(url, tmp_file)
     print('downloaded new version to {}'.format(tmp_file))
     archive = tf.open(tmp_file)
-    archive.extractall(tmp_staging)
+    archive.extractall(TMP_STAGING)
 else:
     print('Factorio is already up to date')
 
-sh.rmtree(tmp_dir)
+print('Stopping Factorio')
+retcode = sp.call('systemctl stop factorio')
+if retcode != 0:
+    raise RuntimeError
+retcode = sp.call('cp -R' + TMP_STAGING + '*' + ' ' + '/opt/')
+if retcode != 0:
+    raise RuntimeError
+retcode = sp.call('systemctl start factorio')
+if retcode != 0:
+    raise RuntimeError
+
+sh.rmtree(TMP_STAGING)
