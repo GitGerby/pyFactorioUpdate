@@ -38,7 +38,7 @@ def extract_factorio(archive, dest):
     return TMP_STAGING + '/factorio/'
 
 
-def get_latest_version_date(experimental):
+def get_latest_version(experimental):
     '''
     returns the datetime of the package available for download and the URL
     to retrieve that package
@@ -98,7 +98,7 @@ if os.path.exists(TMP_FILE):
     print('cleaning up old temp file')
     os.remove(TMP_FILE)
 
-SERVER_DATETIME, URL = get_latest_version_date(ARGS.experimental)
+SERVER_DATETIME, URL = get_latest_version(ARGS.experimental)
 
 if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
     print('new version of Factorio detected, beginning download')
