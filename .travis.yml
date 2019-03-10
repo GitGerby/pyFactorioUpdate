@@ -1,5 +1,6 @@
 language: python
 install:
   - pip install requests
+  - pip install pylint
 script:
   pylint -d c0103
