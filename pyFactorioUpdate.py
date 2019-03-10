@@ -77,7 +77,9 @@ PARSER.add_argument(
 PARSER.add_argument(
     '--check_only',
     help=
-    'Only check whether there is a newer version available, do not fetch and install',
+    'Only check whether there is a newer version available, do not fetch and install.'
+    +
+    'Exits with 0 if no new package availble, 10 if newer version available.',
     action='store_true')
 ARGS = PARSER.parse_args()
 
@@ -111,7 +113,7 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
     print('new version of Factorio available')
 
     if ARGS.check_only:
-        exit(0)
+        exit(10)
 
     download_file(URL, TMP_FILE)
     print('downloaded new version to {}'.format(TMP_FILE))
