@@ -1,6 +1,8 @@
 language: python
+python:
+  - "3.7"
 install:
   - pip install requests
   - pip install pylint
 script:
-  pylint -d c0103
+  pylint -d c0103 ./pyFactorioUpdate.py
