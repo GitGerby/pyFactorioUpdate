@@ -37,7 +37,7 @@ def extract_factorio(archive, dest):
     '''
     archive = tf.open(archive)
     archive.extractall(dest)
-    return TMP_STAGING + '/factorio/'
+    return dest + '/factorio/'
 
 
 def get_latest_version(experimental):
