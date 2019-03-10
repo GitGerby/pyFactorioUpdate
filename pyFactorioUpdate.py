@@ -41,7 +41,7 @@ def get_latest_version(experimental):
     '''
     url = 'https://www.factorio.com/get-download/{revision}/headless/linux64'.format(
         revision="latest" if experimental else "stable")
-    response = rq.head(url, allow_redirects=True)
+    response = requests.head(url, allow_redirects=True)
     return (datetime.strptime(response.headers['Last-Modified'],
                               '%a, %d %b %Y %H:%M:%S %Z'), url)
 
