@@ -99,10 +99,6 @@ if not os.path.exists(TMP_DIR):
     print('creating temporary directory {}'.format(TMP_DIR))
     os.mkdir(TMP_DIR, 0o755)
 
-if not os.path.exists(TMP_STAGING):
-    print('creating staging folder {}'.format(TMP_STAGING))
-    os.mkdir(TMP_STAGING, 0o755)
-
 if os.path.exists(TMP_FILE):
     print('cleaning up old temp file')
     os.remove(TMP_FILE)
@@ -117,6 +113,10 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
 
     download_file(URL, TMP_FILE)
     print('downloaded new version to {}'.format(TMP_FILE))
+
+    if not os.path.exists(TMP_STAGING):
+        print('creating staging folder {}'.format(TMP_STAGING))
+        os.mkdir(TMP_STAGING, 0o755)
 
     NEW_FACTORIO = extract_factorio(TMP_FILE, TMP_STAGING)
 
