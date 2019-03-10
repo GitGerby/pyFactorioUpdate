@@ -8,56 +8,44 @@ experimental version of Factorio rather than the stable version. To force a down
 installation regardless of timestamps use -f or --force.
 '''
 
-import argparse as pr
-import datetime as dt
+import argparse
+from datetime import datetime
 import os
-import shutil as sh
-import tarfile as tf
-import subprocess as sp
+import shutil
+import tarfile
+import subprocess
 import requests as rq
 
 
 def download_file(src, dest):
-    '''
-    downloads a file
-    '''
-
-    download = rq.get(src, stream=True)
+    '''Downloads a file.'''
+    download = requests.get(src, stream=True)
     with open(dest, 'wb') as file_descriptor:
         for chunk in download.iter_content(chunk_size=128):
             file_descriptor.write(chunk)
     file_descriptor.close()
     download.close()
-    print("downloaded {} to {}".format(src, dest))
+    print("Downloaded {} to {}".format(src, dest))
 
 
 def extract_factorio(archive, dest):
-    '''
-    extracts the downloaded tar
-    '''
-    archive = tf.open(archive)
+    '''Extracts the downloaded tar.'''
+    archive = tarfile.open(archive)
     archive.extractall(dest)
-    return dest + '/factorio/'
+    return os.path.join(dest, 'factorio')
 
 
 def get_latest_version(experimental):
+    '''Returns the datetime of the package available for download and the URL
+       to retrieve that package.
     '''
-    returns the datetime of the package available for download and the URL
-    to retrieve that package
-    '''
-    if experimental:
-        url = 'https://www.factorio.com/get-download/latest/headless/linux64'
-    else:
-        url = 'https://www.factorio.com/get-download/stable/headless/linux64'
-
-    head = rq.head(url, allow_redirects=True)
-
-    server_datestring = head.headers['Last-Modified']
-    return (dt.datetime.strptime(server_datestring,
+    url = 'https://www.factorio.com/get-download/{revision}/headless/linux64'.format(
+        revision="latest" if experimental else "stable")
+    response = rq.head(url, allow_redirects=True)
+    return (dt.datetime.strptime(response.headers['Last-Modified'],
                                  '%a, %d %b %Y %H:%M:%S %Z'), url)
 
-
-PARSER = pr.ArgumentParser()
+PARSER = argparse.ArgumentParser()
 PARSER.add_argument(
     '-e',
     '--experimental',
@@ -77,70 +65,70 @@ PARSER.add_argument(
 PARSER.add_argument(
     '--check_only',
     help=
-    'Only check whether there is a newer version available, do not fetch and install.'
-    +
-    'Exits with 0 if no new package availble, 10 if newer version available.',
+    ('Only check whether there is a newer version available, do not fetch and install.',
+     'Exits with 0 if no new package availble, 10 if newer version available.'),
     action='store_true')
 ARGS = PARSER.parse_args()
 
 CURRENT_ARCHIVE = '/opt/factorio-updater/current'
 if os.path.exists(CURRENT_ARCHIVE):
     CURRENT_ARCHIVE_TS = os.path.getctime(CURRENT_ARCHIVE)
-    CURRENT_ARCHIVE_DATETIME = dt.datetime.fromtimestamp(CURRENT_ARCHIVE_TS)
+    CURRENT_ARCHIVE_DATETIME = datetime.fromtimestamp(CURRENT_ARCHIVE_TS)
 else:
     print('Unable to determine timestamp of currently installed instance')
-    CURRENT_ARCHIVE_DATETIME = dt.datetime.fromtimestamp(0)
+    CURRENT_ARCHIVE_DATETIME = datetime.fromtimestamp(0)
 
 TMP_DIR = ARGS.tmp_dir
-TMP_FILE = TMP_DIR + 'archive.tar'
-TMP_STAGING = TMP_DIR + '/staging/'
+TMP_FILE = os.path.join(TMP_DIR, 'archive.tar')
+TMP_STAGING = os.path.join(TMP_DIR, 'staging')
 
 if not os.path.exists(TMP_DIR):
-    print('creating temporary directory {}'.format(TMP_DIR))
+    print('Creating temporary directory {}.'.format(TMP_DIR))
     os.mkdir(TMP_DIR, 0o755)
 
 if os.path.exists(TMP_FILE):
-    print('cleaning up old temp file')
+    print('Cleaning up old temp file.')
     os.remove(TMP_FILE)
 
 SERVER_DATETIME, URL = get_latest_version(ARGS.experimental)
 
 if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
-    print('new version of Factorio available')
+    print('New version of Factorio available.')
 
     if ARGS.check_only:
         exit(10)
 
     download_file(URL, TMP_FILE)
-    print('downloaded new version to {}'.format(TMP_FILE))
+    print('Downloaded new version to {}.'.format(TMP_FILE))
 
     if not os.path.exists(TMP_STAGING):
-        print('creating staging folder {}'.format(TMP_STAGING))
+        print('Creating staging folder {}.'.format(TMP_STAGING))
         os.mkdir(TMP_STAGING, 0o755)
 
     NEW_FACTORIO = extract_factorio(TMP_FILE, TMP_STAGING)
 
-    print('stopping Factorio')
-    return_code = sp.run(['systemctl', 'stop', 'factorio']).returncode
+    print('Stopping Factorio.')
+    return_code = subprocess.run(['systemctl', 'stop', 'factorio']).returncode
     if return_code != 0:
         raise RuntimeError
-    print('Stopped Factorio')
+    print('Stopped Factorio.')
 
-    print('copying new files')
-    return_code = sp.run(['cp', '-R', NEW_FACTORIO, '/opt/']).returncode
+    print('Copying new files.')
+    # TODO: Figure out where the current version is installed. This assumes /opt/.
+    return_code = subprocess.run(['cp', '-R', NEW_FACTORIO, '/opt/']).returncode
     if return_code != 0:
         raise RuntimeError
-    print('Copied new files')
+    print('Copied new files.')
 
-    print('starting Factorio')
-    return_code = sp.run(['systemctl', 'start', 'factorio']).returncode
+    print('Starting Factorio.')
+    return_code = subprocess.run(['systemctl', 'start', 'factorio']).returncode
     if return_code != 0:
         raise RuntimeError
-    print('started Factorio')
+    print('Started Factorio.')
 
-    print('updating current archive')
-    sh.move(TMP_FILE, CURRENT_ARCHIVE)
+    print('Updating current archive.')
+    shutil.move(TMP_FILE, CURRENT_ARCHIVE)
 else:
-    print('Factorio is already up to date')
+    print('Factorio is already up to date.')
 
-sh.rmtree(TMP_STAGING)
+shutil.rmtree(TMP_STAGING)
