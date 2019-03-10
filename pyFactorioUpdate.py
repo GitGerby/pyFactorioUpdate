@@ -14,7 +14,7 @@ import os
 import shutil
 import tarfile
 import subprocess
-import requests as rq
+import requests
 
 
 def download_file(src, dest):
@@ -42,8 +42,8 @@ def get_latest_version(experimental):
     url = 'https://www.factorio.com/get-download/{revision}/headless/linux64'.format(
         revision="latest" if experimental else "stable")
     response = rq.head(url, allow_redirects=True)
-    return (dt.datetime.strptime(response.headers['Last-Modified'],
-                                 '%a, %d %b %Y %H:%M:%S %Z'), url)
+    return (datetime.strptime(response.headers['Last-Modified'],
+                              '%a, %d %b %Y %H:%M:%S %Z'), url)
 
 PARSER = argparse.ArgumentParser()
 PARSER.add_argument(
