@@ -74,6 +74,11 @@ PARSER.add_argument(
     help=
     'Temporary directory to use during processing, defaults to /tmp/factorio-updater/',
 )
+PARSER.add_argument(
+    '--check_only',
+    help=
+    'Only check whether there is a newer version available, do not fetch and install',
+    action='store_true')
 ARGS = PARSER.parse_args()
 
 CURRENT_ARCHIVE = '/opt/factorio-updater/current'
@@ -103,31 +108,35 @@ if os.path.exists(TMP_FILE):
 SERVER_DATETIME, URL = get_latest_version(ARGS.experimental)
 
 if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
-    print('new version of Factorio detected, beginning download')
+    print('new version of Factorio available')
+
+    if ARGS.check_only:
+        exit(0)
+
     download_file(URL, TMP_FILE)
     print('downloaded new version to {}'.format(TMP_FILE))
 
     NEW_FACTORIO = extract_factorio(TMP_FILE, TMP_STAGING)
 
-    print('Stopping Factorio')
+    print('stopping Factorio')
     return_code = sp.run(['systemctl', 'stop', 'factorio']).returncode
     if return_code != 0:
         raise RuntimeError
     print('Stopped Factorio')
 
-    print('Copying new files')
+    print('copying new files')
     return_code = sp.run(['cp', '-R', NEW_FACTORIO, '/opt/']).returncode
     if return_code != 0:
         raise RuntimeError
     print('Copied new files')
 
-    print('Starting Factorio')
+    print('starting Factorio')
     return_code = sp.run(['systemctl', 'start', 'factorio']).returncode
     if return_code != 0:
         raise RuntimeError
-    print('Started Factorio')
+    print('started Factorio')
 
-    print('Updating current archive')
+    print('updating current archive')
     sh.move(TMP_FILE, CURRENT_ARCHIVE)
 else:
     print('Factorio is already up to date')
