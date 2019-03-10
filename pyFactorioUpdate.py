@@ -110,7 +110,7 @@ SERVER_DATETIME, URL = get_latest_version(ARGS.experimental)
 if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
     print('new version of Factorio available')
 
-    if (ARGS.check_only):
+    if ARGS.check_only:
         exit(0)
 
     download_file(URL, TMP_FILE)
