@@ -5,4 +5,4 @@ install:
   - pip install requests
   - pip install pylint
 script:
-  pylint -d c0103 ./pyFactorioUpdate.py
+  pylint ./pyFactorioUpdate.py --verbose
