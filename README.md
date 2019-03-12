@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/GitGerby/pyFactorioUpdate.svg?branch=master)](https://travis-ci.org/GitGerby/pyFactorioUpdate)
+
 pyFactorioUpdate was created to eliminate the toil involved in updating a 
 headless Factorio server. When run the script will compare the last-modified 
 header of the Factorio archive available for download against the creation time 
