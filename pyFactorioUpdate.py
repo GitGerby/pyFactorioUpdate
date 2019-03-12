@@ -45,6 +45,7 @@ def get_latest_version(experimental):
     return (datetime.strptime(response.headers['Last-Modified'],
                               '%a, %d %b %Y %H:%M:%S %Z'), url)
 
+
 PARSER = argparse.ArgumentParser()
 PARSER.add_argument(
     '-e',
@@ -66,7 +67,8 @@ PARSER.add_argument(
     '--check_only',
     help=
     ('Only check whether there is a newer version available, do not fetch and install.',
-     'Exits with 0 if no new package availble, 10 if newer version available.'),
+     'Exits with 0 if no new package availble, 10 if newer version available.'
+     ),
     action='store_true')
 ARGS = PARSER.parse_args()
 
@@ -115,7 +117,8 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
 
     print('Copying new files.')
     # TODO: Figure out where the current version is installed. This assumes /opt/.
-    return_code = subprocess.run(['cp', '-R', NEW_FACTORIO, '/opt/']).returncode
+    return_code = subprocess.run(['cp', '-R', NEW_FACTORIO,
+                                  '/opt/']).returncode
     if return_code != 0:
         raise RuntimeError
     print('Copied new files.')
@@ -131,4 +134,5 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
 else:
     print('Factorio is already up to date.')
 
-shutil.rmtree(TMP_STAGING)
+if os.path.exists(TMP_STAGING):
+    shutil.rmtree(TMP_STAGING)
