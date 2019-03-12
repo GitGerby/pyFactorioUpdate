@@ -75,7 +75,7 @@ ARGS = PARSER.parse_args()
 CURRENT_ARCHIVE = '/opt/factorio-updater/current'
 if os.path.exists(CURRENT_ARCHIVE):
     CURRENT_ARCHIVE_TS = os.path.getctime(CURRENT_ARCHIVE)
-    CURRENT_ARCHIVE_DATETIME = datetime.fromtimestamp(CURRENT_ARCHIVE_TS)
+    CURRENT_ARCHIVE_DATETIME = datetime.utcfromtimestamp(CURRENT_ARCHIVE_TS).
 else:
     print('Unable to determine timestamp of currently installed instance')
     CURRENT_ARCHIVE_DATETIME = datetime.fromtimestamp(0)
