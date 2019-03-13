@@ -24,7 +24,6 @@ def download_file(src, dest):
         for chunk in download.iter_content(chunk_size=128):
             file_descriptor.write(chunk)
     file_descriptor.close()
-    download.close()
     print("Downloaded {} to {}".format(src, dest))
 
 
