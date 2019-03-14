@@ -142,4 +142,5 @@ else:
     LOGGER.info('Factorio is already up to date.')
 
 if os.path.exists(TMP_STAGING):
+    LOGGER.info('Cleaning staging directory')
     shutil.rmtree(TMP_STAGING)
