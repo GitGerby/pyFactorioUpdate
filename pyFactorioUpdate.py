@@ -83,7 +83,7 @@ if os.path.exists(CURRENT_ARCHIVE):
     CURRENT_ARCHIVE_TS = os.path.getctime(CURRENT_ARCHIVE)
     CURRENT_ARCHIVE_DATETIME = datetime.utcfromtimestamp(CURRENT_ARCHIVE_TS)
 else:
-    logging.warning(
+    LOGGER.warning(
         'Unable to determine timestamp of currently installed instance')
     CURRENT_ARCHIVE_DATETIME = datetime.fromtimestamp(0)
 
