@@ -78,11 +78,16 @@ PARSER.add_argument(
 #     default='INFO')
 ARGS = PARSER.parse_args()
 
-LOGGER = logging.getLogger('factorio_updater')
+LOGGER = logging.getLogger()
 LOG_FILE = logging.FileHandler('/var/log/factorio_updater.log')
 LOG_FILE.setLevel(logging.DEBUG)
 LOG_CONSOLE = logging.StreamHandler()
 LOG_CONSOLE.setLevel(logging.WARNING)
+
+FORMATTER = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+LOG_FILE.setFormatter(FORMATTER)
+LOG_CONSOLE.setFormatter(FORMATTER)
 
 LOGGER.addHandler(LOG_FILE)
 LOGGER.addHandler(LOG_CONSOLE)
