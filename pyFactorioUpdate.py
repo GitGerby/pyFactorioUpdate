@@ -80,9 +80,9 @@ ARGS = PARSER.parse_args()
 
 LOGGER = logging.getLogger('factorio_updater')
 LOG_FILE = logging.FileHandler('/var/log/factorio_updater.log')
-LOG_FILE.setLevel(logging.debug)
+LOG_FILE.setLevel(logging.DEBUG)
 LOG_CONSOLE = logging.StreamHandler()
-LOG_CONSOLE.setLevel(logging.warning)
+LOG_CONSOLE.setLevel(logging.WARNING)
 
 LOGGER.addHandler(LOG_FILE)
 LOGGER.addHandler(LOG_CONSOLE)
