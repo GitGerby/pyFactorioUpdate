@@ -25,7 +25,7 @@ def download_file(src, dest):
         for chunk in download.iter_content(chunk_size=128):
             file_descriptor.write(chunk)
     file_descriptor.close()
-    print("Downloaded {} to {}".format(src, dest))
+    LOGGER.debug("Downloaded {} to {}".format(src, dest))
 
 
 def extract_factorio(archive, dest):
@@ -92,11 +92,11 @@ TMP_FILE = os.path.join(TMP_DIR, 'archive.tar')
 TMP_STAGING = os.path.join(TMP_DIR, 'staging')
 
 if not os.path.exists(TMP_DIR):
-    print('Creating temporary directory {}.'.format(TMP_DIR))
+    LOGGER.debug('Creating temporary directory {}.'.format(TMP_DIR))
     os.mkdir(TMP_DIR, 0o755)
 
 if os.path.exists(TMP_FILE):
-    print('Cleaning up old temp file.')
+    LOGGER.info('Cleaning up old temp file.')
     os.remove(TMP_FILE)
 
 SERVER_DATETIME, URL = get_latest_version(ARGS.experimental)
@@ -122,22 +122,24 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
         raise RuntimeError
     LOGGER.debug('Stopped Factorio.')
 
-    print('Copying new files.')
+    LOGGER.debug('Copying new files.')
     # TODO(GitGerby): Figure out where the current version is installed. This assumes /opt/.
     return_code = subprocess.run(['cp', '-R', NEW_FACTORIO,
                                   '/opt/']).returncode
     if return_code != 0:
         raise RuntimeError
-    print('Copied new files.')
+    LOGGER.debug('Copied new files.')
 
-    print('Starting Factorio.')
+    LOGGER.debug('Starting Factorio.')
     return_code = subprocess.run(['systemctl', 'start', 'factorio']).returncode
     if return_code != 0:
         raise RuntimeError
-    print('Started Factorio.')
+    LOGGER.debug('Started Factorio.')
 
-    print('Updating current archive.')
+    LOGGER.debug('Updating current archive.')
     shutil.move(TMP_FILE, CURRENT_ARCHIVE)
+
+    LOGGER.info('Factorio has been updated.')
 else:
     LOGGER.info('Factorio is already up to date.')
 
