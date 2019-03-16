@@ -70,13 +70,20 @@ PARSER.add_argument(
      'Exits with 0 if no new package availble, 10 if newer version available.'
      ),
     action='store_true')
-PARSER.add_argument(
-    '--log_level',
-    choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
-    default='INFO')
+# PARSER.add_argument(
+#     '--log_level',
+#     choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
+#     default='INFO')
 ARGS = PARSER.parse_args()
 
 LOGGER = logging.getLogger('factorio_updater')
+LOG_FILE = logging.FileHandler('/var/log/factorio_updater.log')
+LOG_FILE.setLevel(logging.debug)
+LOG_CONSOLE = logging.StreamHandler()
+LOG_CONSOLE.setLevel(logging.warning)
+
+LOGGER.addHandler(LOG_FILE)
+LOGGER.addHandler(LOG_CONSOLE)
 
 CURRENT_ARCHIVE = '/opt/factorio-updater/current'
 if os.path.exists(CURRENT_ARCHIVE):
