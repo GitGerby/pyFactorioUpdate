@@ -25,7 +25,7 @@ def download_file(src, dest):
         for chunk in download.iter_content(chunk_size=128):
             file_descriptor.write(chunk)
     file_descriptor.close()
-    LOGGER.debug("Downloaded {} to {}".format(src, dest))
+    LOGGER.debug("Downloaded %s to %s", src, dest)
 
 
 def extract_factorio(archive, dest):
@@ -92,7 +92,7 @@ TMP_FILE = os.path.join(TMP_DIR, 'archive.tar')
 TMP_STAGING = os.path.join(TMP_DIR, 'staging')
 
 if not os.path.exists(TMP_DIR):
-    LOGGER.debug('Creating temporary directory {}.'.format(TMP_DIR))
+    LOGGER.debug('Creating temporary directory %s.', TMP_DIR)
     os.mkdir(TMP_DIR, 0o755)
 
 if os.path.exists(TMP_FILE):
