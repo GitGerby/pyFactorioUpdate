@@ -70,6 +70,8 @@ PARSER.add_argument(
      'Exits with 0 if no new package availble, 10 if newer version available.'
      ),
     action='store_true')
+
+# TODO: Allow selection of logging level at run time.
 # PARSER.add_argument(
 #     '--log_level',
 #     choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
