@@ -14,6 +14,7 @@ import os
 import shutil
 import tarfile
 import subprocess
+import logging
 import requests
 
 
@@ -24,7 +25,7 @@ def download_file(src, dest):
         for chunk in download.iter_content(chunk_size=128):
             file_descriptor.write(chunk)
     file_descriptor.close()
-    print("Downloaded {} to {}".format(src, dest))
+    LOGGER.debug("Downloaded %s to %s", src, dest)
 
 
 def extract_factorio(archive, dest):
@@ -69,14 +70,30 @@ PARSER.add_argument(
      'Exits with 0 if no new package availble, 10 if newer version available.'
      ),
     action='store_true')
+
+# TODO: Allow selection of logging level at run time.
+# PARSER.add_argument(
+#     '--log_level',
+#     choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
+#     default='INFO')
 ARGS = PARSER.parse_args()
+
+LOGGER = logging.getLogger('factorio_updater')
+LOG_FILE = logging.FileHandler('/var/log/factorio_updater.log')
+LOG_FILE.setLevel(logging.debug)
+LOG_CONSOLE = logging.StreamHandler()
+LOG_CONSOLE.setLevel(logging.warning)
+
+LOGGER.addHandler(LOG_FILE)
+LOGGER.addHandler(LOG_CONSOLE)
 
 CURRENT_ARCHIVE = '/opt/factorio-updater/current'
 if os.path.exists(CURRENT_ARCHIVE):
     CURRENT_ARCHIVE_TS = os.path.getctime(CURRENT_ARCHIVE)
     CURRENT_ARCHIVE_DATETIME = datetime.utcfromtimestamp(CURRENT_ARCHIVE_TS)
 else:
-    print('Unable to determine timestamp of currently installed instance')
+    LOGGER.warning(
+        'Unable to determine timestamp of currently installed instance')
     CURRENT_ARCHIVE_DATETIME = datetime.fromtimestamp(0)
 
 TMP_DIR = ARGS.tmp_dir
@@ -84,54 +101,57 @@ TMP_FILE = os.path.join(TMP_DIR, 'archive.tar')
 TMP_STAGING = os.path.join(TMP_DIR, 'staging')
 
 if not os.path.exists(TMP_DIR):
-    print('Creating temporary directory {}.'.format(TMP_DIR))
+    LOGGER.debug('Creating temporary directory %s.', TMP_DIR)
     os.mkdir(TMP_DIR, 0o755)
 
 if os.path.exists(TMP_FILE):
-    print('Cleaning up old temp file.')
+    LOGGER.info('Cleaning up old temp file.')
     os.remove(TMP_FILE)
 
 SERVER_DATETIME, URL = get_latest_version(ARGS.experimental)
 
 if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
-    print('New version of Factorio available.')
+    LOGGER.info('New version of Factorio available.')
 
     if ARGS.check_only:
         exit(10)
 
     download_file(URL, TMP_FILE)
-    print('Downloaded new version to {}.'.format(TMP_FILE))
+    LOGGER.debug('Downloaded new version to %s.', TMP_FILE)
 
     if not os.path.exists(TMP_STAGING):
-        print('Creating staging folder {}.'.format(TMP_STAGING))
+        LOGGER.debug('Creating staging folder %s.', TMP_STAGING)
         os.mkdir(TMP_STAGING, 0o755)
 
     NEW_FACTORIO = extract_factorio(TMP_FILE, TMP_STAGING)
 
-    print('Stopping Factorio.')
+    LOGGER.debug('Stopping Factorio.')
     return_code = subprocess.run(['systemctl', 'stop', 'factorio']).returncode
     if return_code != 0:
         raise RuntimeError
-    print('Stopped Factorio.')
+    LOGGER.debug('Stopped Factorio.')
 
-    print('Copying new files.')
-    # TODO: Figure out where the current version is installed. This assumes /opt/.
+    LOGGER.debug('Copying new files.')
+    # TODO(GitGerby): Figure out where the current version is installed. This assumes /opt/.
     return_code = subprocess.run(['cp', '-R', NEW_FACTORIO,
                                   '/opt/']).returncode
     if return_code != 0:
         raise RuntimeError
-    print('Copied new files.')
+    LOGGER.debug('Copied new files.')
 
-    print('Starting Factorio.')
+    LOGGER.debug('Starting Factorio.')
     return_code = subprocess.run(['systemctl', 'start', 'factorio']).returncode
     if return_code != 0:
         raise RuntimeError
-    print('Started Factorio.')
+    LOGGER.debug('Started Factorio.')
 
-    print('Updating current archive.')
+    LOGGER.debug('Updating current archive.')
     shutil.move(TMP_FILE, CURRENT_ARCHIVE)
+
+    LOGGER.info('Factorio has been updated.')
 else:
-    print('Factorio is already up to date.')
+    LOGGER.info('Factorio is already up to date.')
 
 if os.path.exists(TMP_STAGING):
+    LOGGER.info('Cleaning staging directory')
     shutil.rmtree(TMP_STAGING)
