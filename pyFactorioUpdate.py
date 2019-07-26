@@ -69,6 +69,15 @@ PARSER.add_argument(
      'Exits with 0 if no new package availble, 10 if newer version available.'
      ),
     action='store_true')
+PARSER.add_argument(
+    '--mods',
+    help='Install/update mods from a manifest file',
+    action='store_true')
+PARSER.add_argument(
+    '--api_user',
+    help='User mod api auth',
+)
+PARSER.add_argument('--api_token', help='Token for mod api auth')
 ARGS = PARSER.parse_args()
 
 CURRENT_ARCHIVE = '/opt/factorio-updater/current'
@@ -78,6 +87,13 @@ if os.path.exists(CURRENT_ARCHIVE):
 else:
     print('Unable to determine timestamp of currently installed instance')
     CURRENT_ARCHIVE_DATETIME = datetime.fromtimestamp(0)
+
+CHECKMODS = ARGS.mods
+APIUSER = ARGS.api_user
+APITOKEN = ARGS.api_token
+if CHECKMODS and (APIUSER == '' or APITOKEN == ''):
+    print('Mod check requested but no credentials supplied')
+    CHECKMODS = False
 
 TMP_DIR = ARGS.tmp_dir
 TMP_FILE = os.path.join(TMP_DIR, 'archive.tar')
