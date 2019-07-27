@@ -176,7 +176,7 @@ SERVER_DATETIME = get_latest_version(URL)
 
 SERVER_UPDATE = False
 
-if SERVER_DATETIME > CURRENT_ARCHIVE:
+if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME:
     LOGGER.info('Server update available')
     SERVER_UPDATE = True
 
