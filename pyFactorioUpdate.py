@@ -20,9 +20,19 @@ import requests
 import yaml
 
 
-def check_mods():
-    '''Check whether mods need updating and compile a list of updatable mods'''
-    update_needed = False
+def remove_mods(requested_mods):
+    '''remove mods that are not in the defined yaml'''
+    installed = glob.glob('/opt/factorio/mods/*.zip')
+
+    for zip_file in installed:
+        if os.path.basename(zip_file) not in [
+                mod['file_name'] for mod in requested_mods
+        ]:
+            os.remove(zip)
+
+
+def get_mods():
+    '''Get mods requested and installed'''
 
     manifest = requests.get(MODMANIFEST, allow_redirects=True)
     config = dict(yaml.safe_load(manifest.content))
@@ -55,17 +65,20 @@ def check_mods():
                 mod_path,
                 'url':
                 mod_url,
+                'update_needed':
+                update_needed
             })
     return mods_to_update, update_needed
 
 
-def update_mods(updateable_mods):
+def update_mods(requested_mods):
     '''Downloads mods that need updating'''
-    for mod in updateable_mods:
-        download_file(mod['url'],
-                      os.path.join('/opt/factorio/mods', mod['file_name']))
-        if mod['old_path']:
-            os.remove(mod['old_path'])
+    for mod in requested_mods:
+        if mod['update_needed']:
+            download_file(mod['url'],
+                          os.path.join('/opt/factorio/mods', mod['file_name']))
+            if mod['old_path']:
+                os.remove(mod['old_path'])
 
 
 def download_file(src, dest):
@@ -194,7 +207,7 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME:
 MOD_UPDATE = False
 if CHECKMODS:
     LOGGER.info('Checking for mod updates')
-    MODS, MOD_UPDATE = check_mods()
+    MODS, MOD_UPDATE = get_mods()
     if MOD_UPDATE:
         LOGGER.info('Mod updates available')
 
@@ -234,6 +247,7 @@ if SERVER_UPDATE or MOD_UPDATE or ARGS.force:
 
     if MOD_UPDATE:
         update_mods(MODS)
+        remove_mods(MODS)
 
     LOGGER.debug('Starting Factorio.')
     return_code = subprocess.run(['systemctl', 'start', 'factorio']).returncode
