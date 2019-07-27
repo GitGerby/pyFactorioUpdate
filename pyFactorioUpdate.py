@@ -36,9 +36,9 @@ def check_mods():
             local_mod_time = datetime.fromtimestamp(0)
         metadata = requests.get(
             'https://mods.factorio.com/api/mods/{name}'.format(
-                name=mod['name']))
+                name=mod['name'])).json()
         released = datetime.strptime(metadata['releases'][-1]['released_at'],
-                                     '%a, %d %b %Y %H:%M:%S %Z')
+                                     '%Y-%m-%dT%H:%M:%S.%fZ')
         if released > local_mod_time:
             update_needed = True
             mod_url = 'https://mods.factorio.com/' + metadata['releases'][
