@@ -174,19 +174,19 @@ URL = 'https://www.factorio.com/get-download/{revision}/headless/linux64'.format
     revision='latest' if ARGS.experimental else 'stable')
 SERVER_DATETIME = get_latest_version(URL)
 
-server_update = False
+SERVER_UPDATE = False
 
 if SERVER_DATETIME > CURRENT_ARCHIVE:
     LOGGER.info('Server update available')
-    server_update = True
+    SERVER_UPDATE = True
 
 if CHECKMODS:
     LOGGER.info('Checking for mod updates')
-    mods, mod_update = check_mods()
-    if mod_update:
+    MODS, MOD_UPDATE = check_mods()
+    if MOD_UPDATE:
         LOGGER.info('Mod updates available')
 
-if server_update or mod_update or ARGS.force:
+if SERVER_UPDATE or MOD_UPDATE or ARGS.force:
 
     if ARGS.check_only:
         exit(10)
@@ -198,7 +198,7 @@ if server_update or mod_update or ARGS.force:
 
     LOGGER.debug('Stopped Factorio.')
 
-    if server_update:
+    if SERVER_UPDATE:
         download_file(URL, TMP_FILE)
         LOGGER.debug('Downloaded new version to %s.', TMP_FILE)
 
@@ -216,8 +216,8 @@ if server_update or mod_update or ARGS.force:
             raise RuntimeError
         LOGGER.debug('Copied new files.')
 
-    if mod_update:
-        update_mods(mods)
+    if MOD_UPDATE:
+        update_mods(MODS)
 
     LOGGER.debug('Starting Factorio.')
     return_code = subprocess.run(['systemctl', 'start', 'factorio']).returncode
