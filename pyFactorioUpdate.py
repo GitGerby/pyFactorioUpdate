@@ -216,6 +216,10 @@ if SERVER_UPDATE or MOD_UPDATE or ARGS.force:
         if return_code != 0:
             raise RuntimeError
         LOGGER.debug('Copied new files.')
+        LOGGER.debug('Updating current archive.')
+        shutil.move(TMP_FILE, CURRENT_ARCHIVE)
+
+        LOGGER.info('Factorio has been updated.')
 
     if MOD_UPDATE:
         update_mods(MODS)
@@ -226,10 +230,6 @@ if SERVER_UPDATE or MOD_UPDATE or ARGS.force:
         raise RuntimeError
     LOGGER.debug('Started Factorio.')
 
-    LOGGER.debug('Updating current archive.')
-    shutil.move(TMP_FILE, CURRENT_ARCHIVE)
-
-    LOGGER.info('Factorio has been updated.')
 else:
     LOGGER.info('Factorio is already up to date.')
 
