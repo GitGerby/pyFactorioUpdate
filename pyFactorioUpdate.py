@@ -64,7 +64,8 @@ def check_mods():
 def update_mods(updateable_mods):
     '''Downloads mods that need updating'''
     for mod in updateable_mods:
-        download_file(mod['url'], mod['file_name'])
+        download_file(mod['url'],
+                      os.path.join('/opt/factorio/mods', mod['file_name']))
         if mod['old_path']:
             os.remove(mod['old_path'])
 
