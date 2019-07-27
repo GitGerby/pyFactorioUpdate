@@ -23,7 +23,7 @@ import yaml
 def remove_mods(requested_mods):
     '''remove mods that are not in the defined yaml'''
     installed = glob.glob('/opt/factorio/mods/*.zip')
-    print(installed)
+
     for zip_file in installed:
         if os.path.basename(zip_file) not in [
                 mod['file_name'] for mod in requested_mods
@@ -33,18 +33,15 @@ def remove_mods(requested_mods):
 
 def get_mods():
     '''Get mods requested and installed'''
-
     manifest = requests.get(MODMANIFEST, allow_redirects=True)
     config = dict(yaml.safe_load(manifest.content))
     requested_mods = []
-
     for mod in config['mods']:
         update_needed = False
         mod_path = ''
         old_zips = glob.glob('/opt/factorio/mods/' + mod['name'] + '*.zip')
         if old_zips:
             mod_path = old_zips[0]
-
         if os.path.exists(mod_path):
             local_mod_time = datetime.utcfromtimestamp(
                 os.path.getctime(mod_path))
@@ -205,12 +202,11 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME:
     LOGGER.info('Server update available')
     SERVER_UPDATE = True
 
-MOD_UPDATE = False
 if CHECKMODS:
     LOGGER.info('Checking for mod updates')
     MODS = get_mods()
 
-if SERVER_UPDATE or MOD_UPDATE or ARGS.force:
+if SERVER_UPDATE or CHECKMODS or ARGS.force:
 
     if ARGS.check_only:
         exit(10)
@@ -244,9 +240,8 @@ if SERVER_UPDATE or MOD_UPDATE or ARGS.force:
 
         LOGGER.info('Factorio has been updated.')
 
-    if MOD_UPDATE:
-        update_mods(MODS)
-        remove_mods(MODS)
+    update_mods(MODS)
+    remove_mods(MODS)
 
     LOGGER.debug('Starting Factorio.')
     return_code = subprocess.run(['systemctl', 'start', 'factorio']).returncode
