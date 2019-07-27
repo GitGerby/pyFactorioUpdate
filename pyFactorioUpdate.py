@@ -41,7 +41,7 @@ def check_mods():
                                      '%Y-%m-%dT%H:%M:%S.%fZ')
         if released > local_mod_time:
             update_needed = True
-            mod_url = 'https://mods.factorio.com/' + metadata['releases'][
+            mod_url = 'https://mods.factorio.com/' + metadata['releases'][-1][
                 'download_url'] + '?username=' + APIUSER + '&token=' + APITOKEN
             mods_to_update.append({
                 'name': mod['name'],
@@ -54,7 +54,7 @@ def check_mods():
 def update_mods(updateable_mods):
     '''Downloads mods that need updating'''
     for mod in updateable_mods:
-        download_file(mod['mod_url'], mod['path'])
+        download_file(mod['url'], mod['path'])
 
 
 def download_file(src, dest):
