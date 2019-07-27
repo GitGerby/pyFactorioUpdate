@@ -65,8 +65,8 @@ def update_mods(updateable_mods):
     '''Downloads mods that need updating'''
     for mod in updateable_mods:
         download_file(mod['url'], mod['file_name'])
-    if mod['old_path']:
-        os.remove(mod['old_path'])
+        if mod['old_path']:
+            os.remove(mod['old_path'])
 
 
 def download_file(src, dest):
