@@ -55,8 +55,6 @@ def check_mods():
                 mod_path,
                 'url':
                 mod_url,
-                'version':
-                mod['version']
             })
     return mods_to_update, update_needed
 
