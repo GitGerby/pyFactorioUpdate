@@ -10,6 +10,7 @@ installation regardless of timestamps use -f or --force.
 
 import argparse
 from datetime import datetime
+import glob
 import os
 import shutil
 import tarfile
@@ -28,7 +29,11 @@ def check_mods():
     mods_to_update = []
 
     for mod in config['mods']:
-        mod_path = os.path.join('/opt/factorio/mods/', mod['name'] + '.zip')
+        mod_path = ''
+        old_zips = glob.glob('/opt/factorio/mods/' + mod['name'] + '*.zip')
+        if old_zips:
+            mod_path = old_zips[0]
+
         if os.path.exists(mod_path):
             local_mod_time = datetime.utcfromtimestamp(
                 os.path.getctime(mod_path))
@@ -44,9 +49,14 @@ def check_mods():
             mod_url = 'https://mods.factorio.com/' + metadata['releases'][-1][
                 'download_url'] + '?username=' + APIUSER + '&token=' + APITOKEN
             mods_to_update.append({
-                'name': mod['name'],
-                'path': mod_path,
-                'url': mod_url
+                'file_name':
+                metadata['releases'][-1]['file_name'],
+                'old_path':
+                mod_path,
+                'url':
+                mod_url,
+                'version':
+                mod['version']
             })
     return mods_to_update, update_needed
 
@@ -54,7 +64,9 @@ def check_mods():
 def update_mods(updateable_mods):
     '''Downloads mods that need updating'''
     for mod in updateable_mods:
-        download_file(mod['url'], mod['path'])
+        download_file(mod['url'], mod['file_name'])
+    if mod['old_path']:
+        os.remove(mod['old_path'])
 
 
 def download_file(src, dest):
