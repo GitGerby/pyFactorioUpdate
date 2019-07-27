@@ -23,12 +23,12 @@ import yaml
 def remove_mods(requested_mods):
     '''remove mods that are not in the defined yaml'''
     installed = glob.glob('/opt/factorio/mods/*.zip')
-
+    print(installed)
     for zip_file in installed:
         if os.path.basename(zip_file) not in [
                 mod['file_name'] for mod in requested_mods
         ]:
-            os.remove(zip)
+            os.remove(zip_file)
 
 
 def get_mods():
@@ -36,9 +36,10 @@ def get_mods():
 
     manifest = requests.get(MODMANIFEST, allow_redirects=True)
     config = dict(yaml.safe_load(manifest.content))
-    mods_to_update = []
+    requested_mods = []
 
     for mod in config['mods']:
+        update_needed = False
         mod_path = ''
         old_zips = glob.glob('/opt/factorio/mods/' + mod['name'] + '*.zip')
         if old_zips:
@@ -56,19 +57,19 @@ def get_mods():
                                      '%Y-%m-%dT%H:%M:%S.%fZ')
         if released > local_mod_time:
             update_needed = True
-            mod_url = 'https://mods.factorio.com/' + metadata['releases'][-1][
-                'download_url'] + '?username=' + APIUSER + '&token=' + APITOKEN
-            mods_to_update.append({
-                'file_name':
-                metadata['releases'][-1]['file_name'],
-                'old_path':
-                mod_path,
-                'url':
-                mod_url,
-                'update_needed':
-                update_needed
-            })
-    return mods_to_update, update_needed
+        mod_url = 'https://mods.factorio.com/' + metadata['releases'][-1][
+            'download_url'] + '?username=' + APIUSER + '&token=' + APITOKEN
+        requested_mods.append({
+            'file_name':
+            metadata['releases'][-1]['file_name'],
+            'old_path':
+            mod_path,
+            'url':
+            mod_url,
+            'update_needed':
+            update_needed
+        })
+    return requested_mods
 
 
 def update_mods(requested_mods):
@@ -207,9 +208,7 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME:
 MOD_UPDATE = False
 if CHECKMODS:
     LOGGER.info('Checking for mod updates')
-    MODS, MOD_UPDATE = get_mods()
-    if MOD_UPDATE:
-        LOGGER.info('Mod updates available')
+    MODS = get_mods()
 
 if SERVER_UPDATE or MOD_UPDATE or ARGS.force:
 
