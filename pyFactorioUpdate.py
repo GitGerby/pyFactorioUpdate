@@ -180,6 +180,7 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME:
     LOGGER.info('Server update available')
     SERVER_UPDATE = True
 
+MOD_UPDATE = False
 if CHECKMODS:
     LOGGER.info('Checking for mod updates')
     MODS, MOD_UPDATE = check_mods()
