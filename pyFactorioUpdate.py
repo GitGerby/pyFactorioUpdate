@@ -36,6 +36,7 @@ def get_mods():
     manifest = requests.get(MODMANIFEST, allow_redirects=True)
     config = dict(yaml.safe_load(manifest.content))
     requested_mods = []
+    updates_available = False
     for mod in config['mods']:
         update_needed = False
         mod_path = ''
@@ -54,6 +55,7 @@ def get_mods():
                                      '%Y-%m-%dT%H:%M:%S.%fZ')
         if released > local_mod_time:
             update_needed = True
+            updates_available = True
         mod_url = 'https://mods.factorio.com/' + metadata['releases'][-1][
             'download_url'] + '?username=' + APIUSER + '&token=' + APITOKEN
         requested_mods.append({
@@ -66,7 +68,7 @@ def get_mods():
             'update_needed':
             update_needed
         })
-    return requested_mods
+    return requested_mods, updates_available
 
 
 def update_mods(requested_mods):
@@ -204,9 +206,9 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME:
 
 if CHECKMODS:
     LOGGER.info('Checking for mod updates')
-    MODS = get_mods()
+    MODS, MOD_UPDATES = get_mods()
 
-if SERVER_UPDATE or CHECKMODS or ARGS.force:
+if SERVER_UPDATE or MOD_UPDATES or ARGS.force:
 
     if ARGS.check_only:
         exit(10)
