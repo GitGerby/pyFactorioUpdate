@@ -10,12 +10,75 @@ installation regardless of timestamps use -f or --force.
 
 import argparse
 from datetime import datetime
+import glob
 import os
 import shutil
 import tarfile
 import subprocess
 import logging
 import requests
+import yaml
+
+
+def remove_mods(requested_mods):
+    '''remove mods that are not in the defined yaml'''
+    installed = glob.glob(ARGS.mods_dir + '*.zip')
+
+    for zip_file in installed:
+        if os.path.basename(zip_file) not in [
+                mod['file_name'] for mod in requested_mods
+        ]:
+            os.remove(zip_file)
+
+
+def get_mods():
+    '''Get mods requested and installed'''
+    manifest = requests.get(MODMANIFEST, allow_redirects=True)
+    config = dict(yaml.safe_load(manifest.content))
+    requested_mods = []
+    updates_available = False
+    for mod in config['mods']:
+        update_needed = False
+        mod_path = ''
+        old_zips = glob.glob(ARGS.mods_dir + mod['name'] + '*.zip')
+        if old_zips:
+            mod_path = old_zips[0]
+        if os.path.exists(mod_path):
+            local_mod_time = datetime.utcfromtimestamp(
+                os.path.getctime(mod_path))
+        else:
+            local_mod_time = datetime.fromtimestamp(0)
+        metadata = requests.get(
+            'https://mods.factorio.com/api/mods/{name}'.format(
+                name=mod['name'])).json()
+        released = datetime.strptime(metadata['releases'][-1]['released_at'],
+                                     '%Y-%m-%dT%H:%M:%S.%fZ')
+        if released > local_mod_time:
+            update_needed = True
+            updates_available = True
+        mod_url = 'https://mods.factorio.com/' + metadata['releases'][-1][
+            'download_url'] + '?username=' + APIUSER + '&token=' + APITOKEN
+        requested_mods.append({
+            'file_name':
+            metadata['releases'][-1]['file_name'],
+            'old_path':
+            mod_path,
+            'url':
+            mod_url,
+            'update_needed':
+            update_needed
+        })
+    return requested_mods, updates_available
+
+
+def update_mods(requested_mods):
+    '''Downloads mods that need updating'''
+    for mod in requested_mods:
+        if mod['update_needed']:
+            download_file(mod['url'],
+                          os.path.join(ARGS.mods_dir, mod['file_name']))
+            if mod['old_path']:
+                os.remove(mod['old_path'])
 
 
 def download_file(src, dest):
@@ -35,15 +98,13 @@ def extract_factorio(archive, dest):
     return os.path.join(dest, 'factorio')
 
 
-def get_latest_version(experimental):
+def get_latest_version(url):
     '''Returns the datetime of the package available for download and the URL
        to retrieve that package.
     '''
-    url = 'https://www.factorio.com/get-download/{revision}/headless/linux64'.format(
-        revision="latest" if experimental else "stable")
     response = requests.head(url, allow_redirects=True)
-    return (datetime.strptime(response.headers['Last-Modified'],
-                              '%a, %d %b %Y %H:%M:%S %Z'), url)
+    return datetime.strptime(response.headers['Last-Modified'],
+                             '%a, %d %b %Y %H:%M:%S %Z')
 
 
 PARSER = argparse.ArgumentParser()
@@ -70,6 +131,18 @@ PARSER.add_argument(
      'Exits with 0 if no new package availble, 10 if newer version available.'
      ),
     action='store_true')
+PARSER.add_argument('--mods',
+                    help='Install/update mods from a manifest file',
+                    action='store_true')
+PARSER.add_argument(
+    '--api_user',
+    help='User mod api auth',
+)
+PARSER.add_argument('--api_token', help='Token for mod api auth')
+PARSER.add_argument('--mod_manifest', help='Mod manifest location.')
+PARSER.add_argument('--mods_dir',
+                    default='/opt/factorio/mods/',
+                    help='Directory to manage mods.')
 
 # TODO: Allow selection of logging level at run time.
 # PARSER.add_argument(
@@ -101,6 +174,17 @@ else:
         'Unable to determine timestamp of currently installed instance')
     CURRENT_ARCHIVE_DATETIME = datetime.fromtimestamp(0)
 
+CHECKMODS = ARGS.mods
+APIUSER = ARGS.api_user
+APITOKEN = ARGS.api_token
+MODMANIFEST = ARGS.mod_manifest
+if CHECKMODS and (APIUSER == '' or APITOKEN == ''):
+    LOGGER.warning('Mod check requested but no credentials supplied')
+    CHECKMODS = False
+if CHECKMODS and MODMANIFEST == '':
+    LOGGER.warning('Mod check requested but no manifest specified')
+    CHECKMODS = False
+
 TMP_DIR = ARGS.tmp_dir
 TMP_FILE = os.path.join(TMP_DIR, 'archive.tar')
 TMP_STAGING = os.path.join(TMP_DIR, 'staging')
@@ -112,37 +196,56 @@ if not os.path.exists(TMP_DIR):
 if os.path.exists(TMP_FILE):
     LOGGER.info('Cleaning up old temp file.')
     os.remove(TMP_FILE)
+URL = 'https://www.factorio.com/get-download/{revision}/headless/linux64'.format(
+    revision='latest' if ARGS.experimental else 'stable')
+SERVER_DATETIME = get_latest_version(URL)
 
-SERVER_DATETIME, URL = get_latest_version(ARGS.experimental)
+SERVER_UPDATE = False
 
-if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
-    LOGGER.info('New version of Factorio available.')
+if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME:
+    LOGGER.info('Server update available')
+    SERVER_UPDATE = True
+
+if CHECKMODS:
+    LOGGER.info('Checking for mod updates')
+    MODS, MOD_UPDATES = get_mods()
+
+if SERVER_UPDATE or MOD_UPDATES or ARGS.force:
 
     if ARGS.check_only:
         exit(10)
-
-    download_file(URL, TMP_FILE)
-    LOGGER.debug('Downloaded new version to %s.', TMP_FILE)
-
-    if not os.path.exists(TMP_STAGING):
-        LOGGER.debug('Creating staging folder %s.', TMP_STAGING)
-        os.mkdir(TMP_STAGING, 0o755)
-
-    NEW_FACTORIO = extract_factorio(TMP_FILE, TMP_STAGING)
 
     LOGGER.debug('Stopping Factorio.')
     return_code = subprocess.run(['systemctl', 'stop', 'factorio']).returncode
     if return_code != 0:
         raise RuntimeError
+
     LOGGER.debug('Stopped Factorio.')
 
-    LOGGER.debug('Copying new files.')
-    # TODO(GitGerby): Figure out where the current version is installed. This assumes /opt/.
-    return_code = subprocess.run(['cp', '-R', NEW_FACTORIO,
-                                  '/opt/']).returncode
-    if return_code != 0:
-        raise RuntimeError
-    LOGGER.debug('Copied new files.')
+    if SERVER_UPDATE:
+        download_file(URL, TMP_FILE)
+        LOGGER.debug('Downloaded new version to %s.', TMP_FILE)
+
+        if not os.path.exists(TMP_STAGING):
+            LOGGER.debug('Creating staging folder %s.', TMP_STAGING)
+            os.mkdir(TMP_STAGING, 0o755)
+
+        NEW_FACTORIO = extract_factorio(TMP_FILE, TMP_STAGING)
+
+        LOGGER.debug('Copying new files.')
+        # TODO(GitGerby): Figure out where the current version is installed. This assumes /opt/.
+        return_code = subprocess.run(['cp', '-R', NEW_FACTORIO,
+                                      '/opt/']).returncode
+        if return_code != 0:
+            raise RuntimeError
+        LOGGER.debug('Copied new files.')
+        LOGGER.debug('Updating current archive.')
+        shutil.move(TMP_FILE, CURRENT_ARCHIVE)
+
+        LOGGER.info('Factorio has been updated.')
+
+    update_mods(MODS)
+    remove_mods(MODS)
 
     LOGGER.debug('Starting Factorio.')
     return_code = subprocess.run(['systemctl', 'start', 'factorio']).returncode
@@ -150,10 +253,6 @@ if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME or ARGS.force:
         raise RuntimeError
     LOGGER.debug('Started Factorio.')
 
-    LOGGER.debug('Updating current archive.')
-    shutil.move(TMP_FILE, CURRENT_ARCHIVE)
-
-    LOGGER.info('Factorio has been updated.')
 else:
     LOGGER.info('Factorio is already up to date.')
 
