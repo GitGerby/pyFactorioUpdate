@@ -16,6 +16,7 @@ import shutil
 import tarfile
 import subprocess
 import logging
+import sys
 import requests
 import yaml
 
