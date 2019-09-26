@@ -11,5 +11,6 @@ addons:
     organization: "gitgerby"
     token:
       secure: "JYeTULFBL6pNrcbPzUue+ysPO1zMPrY4a2lVg7ftd1h1El2BjYmSYBBVdCwgDzzK7FHTsohh9gm/+hQI87Fopi7UI21zNpMAzhj9RDxvyWIZ2mwXbKjfYemlXi6w6XUUPF14yHODUS4ucf7C+E0Sro0tis9k91+c8yFH+CZI5DbCZwyPgsVJcFlW2QEXr4Icb1n9v4fXlcMKNLBuY6bIalqFWuV+9rGsYL1K9epa4qp4S8o81tinPOtB0UN29FMNGd4V7NRc2rpMpUI4R5RvUcOvUuLzq3lr5gJbYm9XBpkWATLsYy/nNJzvBgKy7rKKQNIIMxaPMK4Nq70BPfAzuX1Z8la8Ofcvs5fNNbnuerjSP5JcvwlxIGuwmyx/G5lVDdud+24vYZFMzvv/rDC87TRI1bdgfebZX9IPWocnIUKWxLMACDWtymNlxSrL9B8itbbbvULsqy+S1S3mh81+ziIlvYKgYjQ21AaK1xQuh0VYWzUh64iUwVTBg3KZ/O5VuP9aBEF5Ek9QON1MaGk5nKUaEFZsrXd6cT5KaV2/8QIq7btgy0Ef85sk1pPi9vsmVEnsLlXJiQgC2l78n3HgvYphMxtUxU7O1Siux2GN/JfENpQZBDu5law3rI86n5XwiaaYZsjp7gJnGhm8KjZ628cG0gSRjkgyPjf4bM11boY="
-script: pylint ./pyFactorioUpdate.py --verbose
+script:
+  - pylint ./pyFactorioUpdate.py --verbose
   - sonar-scanner
