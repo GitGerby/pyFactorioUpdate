@@ -16,6 +16,7 @@ import shutil
 import tarfile
 import subprocess
 import logging
+import sys
 import requests
 import yaml
 
@@ -131,18 +132,20 @@ PARSER.add_argument(
      'Exits with 0 if no new package availble, 10 if newer version available.'
      ),
     action='store_true')
-PARSER.add_argument('--mods',
-                    help='Install/update mods from a manifest file',
-                    action='store_true')
+PARSER.add_argument(
+    '--mods',
+    help='Install/update mods from a manifest file',
+    action='store_true')
 PARSER.add_argument(
     '--api_user',
     help='User mod api auth',
 )
 PARSER.add_argument('--api_token', help='Token for mod api auth')
 PARSER.add_argument('--mod_manifest', help='Mod manifest location.')
-PARSER.add_argument('--mods_dir',
-                    default='/opt/factorio/mods/',
-                    help='Directory to manage mods.')
+PARSER.add_argument(
+    '--mods_dir',
+    default='/opt/factorio/mods/',
+    help='Directory to manage mods.')
 
 # TODO: Allow selection of logging level at run time.
 # PARSER.add_argument(
@@ -213,10 +216,11 @@ if CHECKMODS:
 if SERVER_UPDATE or MOD_UPDATES or ARGS.force:
 
     if ARGS.check_only:
-        exit(10)
+        sys.exit(10)
 
     LOGGER.debug('Stopping Factorio.')
-    return_code = subprocess.run(['systemctl', 'stop', 'factorio']).returncode
+    return_code = subprocess.run(['systemctl', 'stop', 'factorio'],
+                                 check=False).returncode
     if return_code != 0:
         raise RuntimeError
 
@@ -234,8 +238,8 @@ if SERVER_UPDATE or MOD_UPDATES or ARGS.force:
 
         LOGGER.debug('Copying new files.')
         # TODO(GitGerby): Figure out where the current version is installed. This assumes /opt/.
-        return_code = subprocess.run(['cp', '-R', NEW_FACTORIO,
-                                      '/opt/']).returncode
+        return_code = subprocess.run(['cp', '-R', NEW_FACTORIO, '/opt/'],
+                                     check=False).returncode
         if return_code != 0:
             raise RuntimeError
         LOGGER.debug('Copied new files.')
@@ -248,7 +252,8 @@ if SERVER_UPDATE or MOD_UPDATES or ARGS.force:
     remove_mods(MODS)
 
     LOGGER.debug('Starting Factorio.')
-    return_code = subprocess.run(['systemctl', 'start', 'factorio']).returncode
+    return_code = subprocess.run(['systemctl', 'start', 'factorio'],
+                                 check=False).returncode
     if return_code != 0:
         raise RuntimeError
     LOGGER.debug('Started Factorio.')
