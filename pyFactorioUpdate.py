@@ -19,6 +19,7 @@ import logging
 import sys
 import requests
 import yaml
+import factorio_rcon
 
 
 def remove_mods(requested_mods):
@@ -70,6 +71,39 @@ def get_mods():
             update_needed
         })
     return requested_mods, updates_available
+
+
+class RCON:
+    '''Wrapper class for RCON client'''
+    __instance = None
+    __client = None
+
+    @staticmethod
+    def get_instance():
+        """ Static access method. """
+        if RCON.__instance is None:
+            RCON()
+        return RCON.__instance
+
+    def __init__(self):
+        """ Virtually private constructor. """
+        if RCON.__instance is None:
+            RCON.__instance = self
+        else:
+            raise Exception("RCON instance already exists")
+
+    def configure(self, server, port, password):
+        """ Configure RCON client for communication """
+        if self.__client is None:
+            self.__client = factorio_rcon.RCONClient(server, port, password)
+
+    def send(self, msg):
+        """ Send command/message to RCON server """
+        if self.__client is None:
+            logger = logging.getLogger()
+            logger.error("RCON client is not configured.")
+            return
+        self.__client.send_command(msg)
 
 
 def update_mods(requested_mods):
@@ -132,20 +166,23 @@ PARSER.add_argument(
      'Exits with 0 if no new package availble, 10 if newer version available.'
      ),
     action='store_true')
-PARSER.add_argument(
-    '--mods',
-    help='Install/update mods from a manifest file',
-    action='store_true')
+PARSER.add_argument('--mods',
+                    help='Install/update mods from a manifest file',
+                    action='store_true')
 PARSER.add_argument(
     '--api_user',
     help='User mod api auth',
 )
 PARSER.add_argument('--api_token', help='Token for mod api auth')
 PARSER.add_argument('--mod_manifest', help='Mod manifest location.')
-PARSER.add_argument(
-    '--mods_dir',
-    default='/opt/factorio/mods/',
-    help='Directory to manage mods.')
+PARSER.add_argument('--mods_dir',
+                    default='/opt/factorio/mods/',
+                    help='Directory to manage mods.')
+PARSER.add_argument('--rcon_port',
+                    default=27015,
+                    help='Port for RCON Protocol communication.')
+PARSER.add_argument('--rcon_password',
+                    help='Password to communicate with server via RCON.')
 
 # TODO: Allow selection of logging level at run time.
 # PARSER.add_argument(
@@ -167,6 +204,10 @@ LOG_CONSOLE.setFormatter(FORMATTER)
 
 LOGGER.addHandler(LOG_FILE)
 LOGGER.addHandler(LOG_CONSOLE)
+
+RCON_CLIENT = RCON.get_instance()
+if ARGS.rcon_password is not None:
+    RCON_CLIENT.configure('localhost', ARGS.rcon_port, ARGS.rcon_password)
 
 CURRENT_ARCHIVE = '/opt/factorio-updater/current'
 if os.path.exists(CURRENT_ARCHIVE):
@@ -206,6 +247,7 @@ SERVER_DATETIME = get_latest_version(URL)
 SERVER_UPDATE = False
 
 if SERVER_DATETIME > CURRENT_ARCHIVE_DATETIME:
+    RCON_CLIENT.send('Server update available')
     LOGGER.info('Server update available')
     SERVER_UPDATE = True
 
@@ -217,7 +259,7 @@ if SERVER_UPDATE or MOD_UPDATES or ARGS.force:
 
     if ARGS.check_only:
         sys.exit(10)
-
+    RCON_CLIENT.send('Stopping game server.')
     LOGGER.debug('Stopping Factorio.')
     return_code = subprocess.run(['systemctl', 'stop', 'factorio'],
                                  check=False).returncode
